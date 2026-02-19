@@ -13,17 +13,18 @@ logger = logging.getLogger(__name__)
 
 # Configuração da página do Streamlit
 st.set_page_config(page_title="ISS Tracker - Rastreamento em tempo real", layout="wide")
-    
+
+
 # Função principal do aplicativo
 async def app() -> None:
     # Configuração do título e layout
-    st.markdown("<h1 style='text-align: center;'>Posição da estação espacial ISS em tempo real</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Posição da estação espacial ISS em tempo real</h1>",unsafe_allow_html=True)
     placeholder = st.empty()
     info = st.empty()
     counter = st.empty()
     metrics_container = st.empty()
     # Configuração do timeout para as requisições à API
-    timeout: float = 5.0  # Tempo em segundos entre atualizações
+    timeout: float = 15.0  # Tempo em segundos entre atualizações
 
     # Variável de controle para o loop de atualização
     if "is_running" not in st.session_state:
@@ -38,7 +39,7 @@ async def app() -> None:
             # Simulação de dados, remova quando usar a API real
             # iss_lat, iss_lon = random.uniform(-90, 90), random.uniform(-180, 180)  # Simulação de localização
             logger.info(f"ISS localizada em: lat={iss_lat}, lon={iss_lon}")
-            
+
             # Configuração do ícone da ISS para o mapa
             icon_atlas = "iss.png"
             icon_mapping = {"iss": {"x": 0, "y": 0, "width": 64, "height": 64, "anchorY": 128}}
@@ -83,15 +84,16 @@ async def app() -> None:
             for i in range(int(timeout), -1, -1):
                 if i == 0:
                     counter.markdown("**Atualizando...**")
-                    time.sleep(1)
+                    await asyncio.sleep(1)
                 else:
                     counter.markdown(f"Próxima atualização em: {i} segundos")
-                time.sleep(1)
+                await asyncio.sleep(1)
 
         except Exception as e:
-            logger.error(f"Erro ao atualizar posição da ISS: {e}")
-            st.error(f"Erro ao atualizar posição da ISS: {e}")
-            time.sleep(5)
+            # Log completo com traceback para facilitar diagnóstico
+            logger.exception("Erro ao atualizar posição da ISS")
+            st.error(f"Erro ao atualizar posição da ISS: {type(e).__name__}: {repr(e)}")
+            await asyncio.sleep(5)
 
 
 if __name__ == "__main__":
