@@ -74,3 +74,9 @@ Certifique-se de que `iss_api.py` esteja presente e funcionando (usa `aiohttp` p
 
 - Se o ícone não aparecer, verifique o nome do arquivo e caminho (`iss.png`) e se o navegador permitiu o carregamento da imagem pelo pydeck.
 - Ajuste o `timeout` e `zoom` em `app.py` conforme necessário.
+
+## Aviso sobre erros de conexões
+
+- Se ocorrerem erros de conexão ao usar a API real, verifique sua conexão com a internet e se o endpoint da API está acessível.
+- O código inclui backoff exponencial com jitter para lidar com falhas temporárias na API, mas se os erros persistirem, pode ser necessário aumentar o número de tentativas ou o tempo entre elas.
+- Para depuração, verifique os logs no console onde o Streamlit está rodando.
