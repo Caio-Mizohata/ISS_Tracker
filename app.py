@@ -1,11 +1,10 @@
 import streamlit as st
 from pydeck import Layer, ViewState, Deck
 import asyncio
-import time
 import logging
 from datetime import datetime, timedelta, timezone
 from iss_api import get_iss_location
-import random  # Apenas para simulação de dados, remova quando usar a API real
+import random  # apenas para simulação; remova quando usar a API real
 
 # Configuração do logger
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -17,14 +16,13 @@ st.set_page_config(page_title="ISS Tracker - Rastreamento em tempo real", layout
 
 # Função principal do aplicativo
 async def app() -> None:
-    # Configuração do título e layout
+    # Função principal
     st.markdown("<h1 style='text-align: center;'>Posição da estação espacial ISS em tempo real</h1>",unsafe_allow_html=True)
     placeholder = st.empty()
     info = st.empty()
     counter = st.empty()
     metrics_container = st.empty()
-    # Configuração do timeout para as requisições à API
-    timeout: float = 15.0  # Tempo em segundos entre atualizações
+    timeout = 15.0
 
     # Variável de controle para o loop de atualização
     if "is_running" not in st.session_state:
@@ -45,7 +43,7 @@ async def app() -> None:
             icon_mapping = {"iss": {"x": 0, "y": 0, "width": 64, "height": 64, "anchorY": 128}}
 
             # Configuração da camada do mapa para exibir a posição da ISS
-            layer: Layer = Layer(
+            layer = Layer(
                 "IconLayer",
                 data=[{"lat": iss_lat, "lon": iss_lon, "icon": "iss"}],
                 get_icon="icon",
@@ -60,10 +58,10 @@ async def app() -> None:
             )
 
             # Configuração da visualização inicial do mapa
-            view_state: ViewState = ViewState(latitude=iss_lat, longitude=iss_lon, zoom=3, pitch=0)
+            view_state = ViewState(latitude=iss_lat, longitude=iss_lon, zoom=3, pitch=0)
 
             # Configuração do deck para renderizar o mapa com a camada da ISS
-            deck: Deck = Deck(layers=[layer], initial_view_state=view_state)
+            deck = Deck(layers=[layer], initial_view_state=view_state)
 
             # Renderização do mapa e das métricas em containers separados para melhor organização
             with placeholder.container():
@@ -76,7 +74,7 @@ async def app() -> None:
                 col3.metric("Altitude média", "408 km", border=True)
                 col4.metric("Velocidade média", "27,600 km/h", border=True)
 
-            # Exibição da última atualização e contagem regressiva para a próxima atualização
+            # Exibição da última atualização
             sp_tz = timezone(timedelta(hours=-3))
             info.markdown(f"**Última atualização:** {datetime.now(sp_tz).strftime('%d/%m/%Y %H:%M:%S')}")
 
