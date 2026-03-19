@@ -54,7 +54,7 @@ Por padrão o projeto já usa a API real. Se precisar modificar ou dar manutenç
 
 ```python
 # substituir (uso da API)
-iss_lat, iss_lon = await get_iss_location(timeout=10.0)
+iss_lat, iss_lon = await get_iss_location(timeout=timeout)
 
 # por (modo de simulação)
 import random
