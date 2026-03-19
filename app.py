@@ -39,7 +39,7 @@ async def app() -> None:
             logger.info(f"ISS localizada em: lat={iss_lat}, lon={iss_lon}")
 
             # Configuração do ícone da ISS para o mapa
-            icon_atlas = "iss.png"
+            icon_atlas = "images/iss.png"  
             icon_mapping = {"iss": {"x": 0, "y": 0, "width": 64, "height": 64, "anchorY": 128}}
 
             # Configuração da camada do mapa para exibir a posição da ISS
