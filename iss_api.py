@@ -1,43 +1,35 @@
-import asyncio
-import random
-from aiohttp import ClientSession, ClientError, ClientResponseError, ClientTimeout
+from aiohttp import ClientSession, ClientResponseError, ClientTimeout
+from tenacity import (retry,stop_after_attempt,wait_exponential_jitter,retry_if_exception,)
 
 
-# Função para obter a localização da ISS usando a API pública
+def is_retriable_error(e: BaseException) -> bool:
+    """Não retenta para erros 4xx (exceto 429)."""
+    if isinstance(e, ClientResponseError):
+        if 400 <= e.status < 500 and e.status != 429:
+            return False
+    return True
+
+
 async def get_iss_location(timeout: float, retries: int = 5, base_delay: float = 0.5, max_delay: float = 30.0) -> tuple[float, float]:
-    url: str = "http://api.open-notify.org/iss-now.json"
+    url = "http://api.open-notify.org/iss-now.json"
 
-    for attempt in range(retries):
-        try:
-            async with ClientSession(timeout=ClientTimeout(total=timeout)) as session:
-                async with session.get(url) as response:
-                    response.raise_for_status()
-                    data: dict = await response.json()
+    @retry(
+        stop=stop_after_attempt(retries),
+        wait=wait_exponential_jitter(initial=base_delay, max=max_delay),
+        retry=retry_if_exception(is_retriable_error),
+        reraise=True,
+    )
+    async def fetch(session: ClientSession) -> tuple[float, float]:
+        async with session.get(url) as response:
+            response.raise_for_status()
+            data: dict = await response.json()
 
-                    if data.get("message") != "success":
-                        raise Exception("Falha ao obter localização da ISS")
+            if data.get("message") != "success":
+                raise ValueError("Falha ao obter localização da ISS")
 
-                    latitude: float = float(data["iss_position"]["latitude"])
-                    longitude: float = float(data["iss_position"]["longitude"])
-                    return latitude, longitude
+            latitude = float(data["iss_position"]["latitude"])
+            longitude = float(data["iss_position"]["longitude"])
+            return latitude, longitude
 
-        except ClientResponseError as e:
-            # Não tentar novamente para erros do cliente (4xx), exceto 429 (rate limit)
-            if 400 <= e.status < 500 and e.status != 429:
-                raise Exception(f"Resposta inválida da API da ISS: {e.status}") from e
-            last_exc = Exception(f"Resposta inválida da API da ISS: {e.status}")
-            last_exc.__cause__ = e
-
-        except (ClientError, ValueError, asyncio.TimeoutError) as e:
-            last_exc = Exception(f"Erro ao consultar API da ISS: {e}")
-            last_exc.__cause__ = e
-
-        # Backoff exponencial com jitter para evitar sobrecarregar a API em caso de falhas temporárias
-        # Se não for a última tentativa, aguarda com backoff exponencial + jitter (full jitter)
-        if attempt < retries - 1:
-            exp_delay = min(max_delay, base_delay * (2**attempt))
-            sleep_time = random.uniform(0, exp_delay)
-            await asyncio.sleep(sleep_time)
-        else:
-            # última tentativa falhou: levanta a última exceção construída
-            raise last_exc
+    async with ClientSession(timeout=ClientTimeout(total=timeout)) as session:
+        return await fetch(session)
