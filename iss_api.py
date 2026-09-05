@@ -1,9 +1,14 @@
+import asyncio
 from aiohttp import ClientSession, ClientResponseError, ClientTimeout
-from tenacity import (retry,stop_after_attempt,wait_exponential_jitter,retry_if_exception,)
+from tenacity import (retry,stop_after_attempt,wait_exponential_jitter,retry_if_exception)
 
 
 def is_retriable_error(e: BaseException) -> bool:
-    """Não retenta para erros 4xx (exceto 429)."""
+    """Não retenta para erros de cancelamento/shutdown ou 4xx (exceto 429)."""
+    if isinstance(e, (asyncio.CancelledError, KeyboardInterrupt)):
+        return False
+    if isinstance(e, RuntimeError) and ("shutdown" in str(e).lower() or "closed" in str(e).lower()):
+        return False
     if isinstance(e, ClientResponseError):
         if 400 <= e.status < 500 and e.status != 429:
             return False

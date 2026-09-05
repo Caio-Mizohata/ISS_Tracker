@@ -87,6 +87,16 @@ async def app() -> None:
                     counter.markdown(f"Próxima atualização em: {i} segundos")
                 await asyncio.sleep(1)
 
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            logger.info("Encerramento da aplicação solicitado.")
+            break
+        except RuntimeError as e:
+            if "shutdown" in str(e).lower() or "closed" in str(e).lower():
+                logger.info("Event loop encerrado durante a atualização.")
+                break
+            logger.exception("Erro de execução no loop principal")
+            st.error(f"Erro ao atualizar posição da ISS: {type(e).__name__}: {repr(e)}")
+            await asyncio.sleep(5)
         except Exception as e:
             # Log completo com traceback para facilitar diagnóstico
             logger.exception("Erro ao atualizar posição da ISS")
@@ -95,4 +105,7 @@ async def app() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(app())
+    try:
+        asyncio.run(app())
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        pass
